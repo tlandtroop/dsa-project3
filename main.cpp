@@ -12,26 +12,30 @@
 #include "graph.h"
 using namespace std;
 
-void trim(string& str) {
+void trim(string &str)
+{
     // Remove the leading whitespace.
     size_t startpos = str.find_first_not_of(" \t\r\n");
-    if (startpos != string::npos) {
+    if (startpos != string::npos)
+    {
         str.erase(0, startpos);
     }
     // Remove the trailing whitespace.
     size_t endpos = str.find_last_not_of(" \t\r\n");
-    if (endpos != string::npos) {
+    if (endpos != string::npos)
+    {
         str.erase(endpos + 1);
     }
 }
 
-
-int main() {
+int main()
+{
     // Open the CSV file for reading.
     ifstream file("gametest100000.csv");
 
     // Make sure the file was opened successfully.
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         cout << "Failed to open file." << endl;
         return 1;
     }
@@ -42,19 +46,22 @@ int main() {
 
     string line;
     int numOfGames = 0; // Keeps track of all the games in the map (only including the games with a genre).
-    while (getline(file, line)) {
+    while (getline(file, line))
+    {
         // Split the line into columns using regex to handle commas inside quotes.
         vector<string> columns;
         regex re(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
         sregex_token_iterator it(line.begin(), line.end(), re, -1);
         sregex_token_iterator end;
-        while (it != end) {
+        while (it != end)
+        {
             columns.push_back(*it++);
         }
 
         string name = "";
         string genres = "";
-        if (columns.size() >= 2) {
+        if (columns.size() >= 2)
+        {
             name = columns[0];
             genres = columns[1];
             trim(genres);
@@ -63,47 +70,56 @@ int main() {
 
         size_t pos = genres.find("||");
         // If there is no "||" symbol.
-        if((pos == string::npos) && (!genres.empty()) && (!all_of(genres.begin(), genres.end(), ::isspace))) {
+        if ((pos == string::npos) && (!genres.empty()) && (!all_of(genres.begin(), genres.end(), ::isspace)))
+        {
             games_with_genre[name] = {genres};
             auto it = games_by_genre.find(genres);
-            if (it == games_by_genre.end()) {
+            if (it == games_by_genre.end())
+            {
                 // If the key does not exist, add it to the map with a new vector.
                 games_by_genre[genres] = {name};
-            } else {
+            }
+            else
+            {
                 // If the key already exists, add the game to the existing vector.
                 it->second.push_back(name);
             }
             numOfGames++;
         }
-            // If the "||" symbol is present.
-        else if ((pos != string::npos) && (!genres.empty()) && (!all_of(genres.begin(), genres.end(), ::isspace))) {
+        // If the "||" symbol is present.
+        else if ((pos != string::npos) && (!genres.empty()) && (!all_of(genres.begin(), genres.end(), ::isspace)))
+        {
             numOfGames++;
             stringstream test(genres);
             string temp;
-            while(getline(test, temp, '|')) {
+            while (getline(test, temp, '|'))
+            {
                 trim(temp);
-                if (!temp.empty()) {
+                if (!temp.empty())
+                {
                     auto iter = games_with_genre.find(name);
-                    if(iter == games_with_genre.end()) {
+                    if (iter == games_with_genre.end())
+                    {
                         games_with_genre[name] = {temp};
                     }
-                    else {
+                    else
+                    {
                         iter->second.push_back(temp);
                     }
                     // Check if the genre key already exists in the map.
                     auto it = games_by_genre.find(temp);
-                    if (it == games_by_genre.end()) {
+                    if (it == games_by_genre.end())
+                    {
                         // If the key does not exist, add it to the map with a new vector.
                         games_by_genre[temp] = {name};
-                    } else {
+                    }
+                    else
+                    {
                         // If the key already exists, add the game to the existing vector.
                         it->second.push_back(name);
                     }
                 }
             }
-        }
-        else {
-            continue;
         }
     }
 
@@ -125,90 +141,119 @@ int main() {
     cout << "----------------------------------------------------------------------------------------------------" << endl;
     cout << endl;
 
-    while (userInput != 4) {
+    while (userInput != 4)
+    {
         cout << "-> ";
         cin >> userInput;
         cout << endl;
 
-        if (userInput == 1) {
+        if (userInput == 1)
+        {
             cout << "Game: ";
             string game;
             cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear the cin input buffer.
-            getline(cin, game);
+            getline(cin, game);                                  // Stores user input in a variable
             cout << endl;
 
-            set<string> games;
+            set<string> games; // Use sets to store the game similar to the target game (uses set to ensure no duplicates)
+            // Locate the game in the map
             auto it = games_with_genre.find(game);
-            if(it == games_with_genre.end()) {
-                cout << game << " is not found in the database." << endl << endl;
+            // Checks if iterator is null which mean the game is not in the map
+            if (it == games_with_genre.end())
+            {
+                cout << game << " is not found in the database." << endl
+                     << endl;
             }
-            else {
+            // Goes through the map and insert similar games into the set
+            else
+            {
                 cout << "Here is a list of games related to " << game << ":" << endl;
-                for(int i = 0; i < it->second.size(); i++) {
+                for (int i = 0; i < it->second.size(); i++)
+                {
                     string targetGenre = it->second[i];
                     auto iter = games_by_genre.find(targetGenre);
-                    for(int j = 0; j < iter->second.size(); j++) {
-                        if(iter->second[j] != game) {
+                    for (int j = 0; j < iter->second.size(); j++)
+                    {
+                        if (iter->second[j] != game)
+                        {
                             games.insert(iter->second[j]);
                         }
                     }
                 }
+                // Loop through the set to only print out the first 5 similar games
                 int count = 0;
-                for (auto it = games.begin(); it != games.end(); it++) {
+                for (auto it = games.begin(); it != games.end(); it++)
+                {
                     cout << count + 1 << ": ";
                     cout << *it << endl;
                     count++;
-                    if (count == 5) {
+                    if (count == 5)
+                    {
                         break;
                     }
                 }
                 cout << endl;
             }
         }
-        else if (userInput == 2) {
+        // Print out games that has the same genre with user input
+        else if (userInput == 2)
+        {
             cout << "Genre: ";
             string genre;
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             getline(cin, genre);
             cout << endl;
 
+            // Locate the genre in the map
             auto it = games_by_genre.find(genre);
-            if (it == games_by_genre.end()) {
+            // Checks if genre is not in the map
+            if (it == games_by_genre.end())
+            {
                 cout << genre << " is not found in the database." << endl;
             }
-            else {
+            // Genre is in the map
+            else
+            {
                 cout << "Here is a list of games in the genre " << genre << ": " << endl;
-                for (int i = 0; i < 5; i++) {
+                for (int i = 0; i < 5; i++)
+                {
                     cout << i + 1 << ": ";
                     cout << it->second[i] << endl;
                 }
             }
             cout << endl;
         }
-        else if (userInput == 3) {
-            cout << "Here is the duration of a BFS and DFS traversal of the graph: " << endl << endl;
+        else if (userInput == 3)
+        {
+            cout << "Here is the duration of a BFS and DFS traversal of the graph: " << endl
+                 << endl;
 
+            // Create a graph object
             graph graph(games_by_genre);
 
+            // Convert the map that contains the genres as the key and games in a vector into a 2D bool array
             graph.convertGraph(games_by_genre);
 
+            // Track the time it takes for DFS and BFS
             auto start = chrono::high_resolution_clock::now();
             graph.DFS("Pixel Gear", games_by_genre);
             auto end = chrono::high_resolution_clock::now();
-            auto DFSTime = chrono::duration_cast<chrono::nanoseconds>(end-start).count();
+            auto DFSTime = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
 
             start = chrono::high_resolution_clock::now();
             graph.BFS("Pixel Gear", games_by_genre);
             end = chrono::high_resolution_clock::now();
-            auto BFSTime = chrono::duration_cast<chrono::nanoseconds>(end-start).count();
+            auto BFSTime = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
 
+            // Outputs the time
             cout << "DFS Duration: " << DFSTime << " nanoseconds" << endl;
             cout << "BFS Duration: " << BFSTime << " nanoseconds" << endl;
 
-
             cout << endl;
         }
-        else if (userInput == 4) {
+        // Ends the program
+        else if (userInput == 4)
+        {
             break;
         }
     }
